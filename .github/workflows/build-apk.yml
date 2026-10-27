@@ -5,6 +5,7 @@ on:
     branches: ["main"]
     paths:
       - "App.js"
+      - "README.md"
       - "app.config.js"
       - "index.js"
       - "package.json"
