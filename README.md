@@ -1,28 +1,37 @@
-# Zyro Wallet APK 💙
+# Zyro Wallet 💙
 
-Android wallet interface prototype with a blue-and-white design, plus an AI/security API integration starter.
+Zyro Wallet is a blue-and-white React Native (Expo) Android app with a JavaScript/Node.js backend starter.
 
-## Included in this repository
-- Wallet home screen and clearly labelled demo balance
-- Demo transfer history only; no funds move
-- AI cybersecurity Q&A screen wired to a backend endpoint
-- URL reputation lookup screen wired to a backend endpoint
-- Backend starter under `backend/`
-- GitHub Actions builds a debug APK
+## Stack
+- Mobile app: React Native + Expo (JavaScript)
+- API backend: Node.js, native HTTP server in backend/server.mjs
+- Android APK: generated with Expo Prebuild and Gradle in GitHub Actions
 
-## Important: not a live financial product
-Real money transfers, deposits, withdrawals, account balances, and payment QR settlement are **not enabled**. No licensed payment provider has been selected or connected. A real deployment needs a provider-approved merchant account, provider-specific server-side integration, verified webhooks, authentication, a ledger, reconciliation, fraud monitoring, and security/privacy review. Never trust payment status from the Android client and never place secret API keys in the APK or GitHub.
+## Included in the app
+- Wallet-style home screen and clearly labelled demo balance
+- Demo transaction history only; no funds move
+- AI cybersecurity Q&A connected to POST /api/assistant
+- URL reputation lookup connected to POST /api/security/url
+- Warning when the backend URL is not configured
+- GitHub Actions workflow uploads a debug APK artifact
 
-## AI and URL reputation
-The Android app currently uses a placeholder backend URL. Deploy `backend/server.mjs` on a server with HTTPS, set private server environment variables, then set `API_BASE_URL` in `MainActivity.java` to that HTTPS origin and rebuild. Until that is done, the AI and URL scan buttons will explicitly report that they are not connected.
+## Build APK
+1. Open the repository Actions tab.
+2. Select Build Zyro Wallet APK and run it, or push a change to app files.
+3. Open the completed successful run.
+4. Download the Zyro-Wallet-APK artifact and extract app-debug.apk.
 
-The VirusTotal integration submits URLs to VirusTotal; submitted indicators may be shared with its security dataset. Do not submit private or sensitive links. Check the provider's terms and access level before commercial use. URL reputation does not scan the Android device and does not guarantee safety. Keep Google Play Protect enabled.
+The workflow generates the native Android project from Expo each run; generated Android files are not committed.
 
-## Build and download
-1. Open the Actions tab.
-2. Select **Build Zyro Wallet APK**.
-3. Open a successful run.
-4. Under Artifacts, download **Zyro-Wallet-APK** and extract the ZIP.
-5. Install `app-debug.apk` for testing.
+## Configure the API URL
+Deploy the backend on a trusted HTTPS host first. In GitHub repository Settings → Secrets and variables → Actions → Variables, create a repository variable named EXPO_PUBLIC_API_BASE_URL with the HTTPS origin of your API (for example, https://api.example.com, without a trailing slash). Re-run the APK workflow. This variable is public app configuration, not a secret. Never place API keys in this variable or the APK.
 
-This is a debug build, not a production financial app or a Play Store release.
+## Backend
+See backend/README.md. Start locally from the backend directory with npm start.
+
+Set OPENAI_API_KEY and VIRUSTOTAL_API_KEY only as private environment variables on the backend host. Do not commit real keys to GitHub or embed them in the Android app.
+
+## Important financial and security limitations
+This is a prototype, not a live financial product. Deposits, transfers, withdrawals, payment QR settlement, and real account balances are disabled. Real payments require an approved provider/merchant account, server-side provider integration, verified webhooks, user authentication, a secure ledger, reconciliation, fraud controls, and an independent security/privacy review. Do not use this prototype to store or transfer real money.
+
+The backend starter is not production-ready; it does not yet include user authentication, database persistence, rate limiting, or abuse monitoring. Do not expose it publicly before implementing those controls. VirusTotal submissions may be shared with its security dataset; never submit private links. URL reputation checks do not scan the whole phone or guarantee safety. Keep Google Play Protect enabled.
