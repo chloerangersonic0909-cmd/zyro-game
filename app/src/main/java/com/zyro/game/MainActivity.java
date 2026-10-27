@@ -197,5 +197,6 @@ public class MainActivity extends Activity {
             } finally { if(conn!=null)conn.disconnect(); }
         }).start();
     }
-\n    private void info(String title,String message){new AlertDialog.Builder(this).setTitle(title).setMessage(message).setPositiveButton("ตกลง",null).show();}
+
+    private void info(String title,String message){new AlertDialog.Builder(this).setTitle(title).setMessage(message).setPositiveButton("ตกลง",null).show();}
 }
