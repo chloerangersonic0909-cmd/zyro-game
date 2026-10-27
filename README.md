@@ -1,22 +1,23 @@
-# Zyro Game APK 🎮
+# Zyro Wallet APK 💙
 
-A touch-friendly fantasy RPG for Android, built with native Java and the Android SDK.
+Zyro Wallet is an Android wallet UI prototype with a blue-and-white design.
 
-## Features
-- Battle randomly selected fantasy monsters
-- Level, XP, HP, coins, and healing potions
-- Special attack skill
-- Quest rewards for winning three battles
-- Progress saved locally on your device
-- Dark sci-fi interface
-- Automatic Android APK build with GitHub Actions
+## Current prototype features
+- Wallet home screen with a clearly labelled test balance
+- Service shortcuts for scan/pay, transfer, top up, and receive
+- Local in-memory demo transfer history
+- Android APK built by GitHub Actions
 
-## Build and download the APK
-1. Open the **Actions** tab in this repository.
-2. Select **Build Zyro Game APK**.
-3. Tap **Run workflow** on the main branch, or wait for a push-triggered build.
-4. Open the completed workflow run.
-5. Under **Artifacts**, download **Zyro-Game-APK** and extract the ZIP to get `app-debug.apk`.
-6. Open the APK on your Android phone. If prompted, allow installation for the app you used to open the file.
+## Important: real money is not enabled
+This build is a UI prototype only. It does not connect to a bank, payment gateway, PromptPay, or any licensed payment provider. The balance is not real money and demo transfers do not move funds.
 
-The workflow produces a debug APK for testing. It is not a Play Store release build.
+To enable real payments, the project needs a selected licensed provider, an approved merchant/account agreement, a secure server-side integration, verified payment webhooks, authentication, transaction records, and provider sandbox testing. Do not place provider secret keys in the Android app or commit secrets to Git.
+
+## Build and download
+1. Open the Actions tab.
+2. Select **Build Zyro Wallet APK**.
+3. Open the successful run.
+4. Under Artifacts, download **Zyro-Wallet-APK** and extract the ZIP.
+5. Install `app-debug.apk` on your Android phone for testing.
+
+This is a debug APK for testing, not a production or Play Store release.
