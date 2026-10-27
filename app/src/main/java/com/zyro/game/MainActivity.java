@@ -14,14 +14,14 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import android.widget.Toast;
+import android.widget.Toast;\nimport java.net.HttpURLConnection;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
 public class MainActivity extends Activity {
-    private final int BLUE = Color.rgb(28,105,235), BLUE_DARK = Color.rgb(18,72,178);
+    private final int BLUE = Color.rgb(28,105,235), BLUE_DARK = Color.rgb(18,72,178);\n    private static final String API_BASE_URL = "https://YOUR-BACKEND-DOMAIN";
     private final int BG = Color.rgb(244,248,255), INK = Color.rgb(24,42,72), MUTED = Color.rgb(111,130,158), WHITE = Color.WHITE;
     private LinearLayout content;
     private TextView balanceText, historyText;
@@ -86,6 +86,12 @@ public class MainActivity extends Activity {
         promo.addView(label("ก่อนใช้งานเงินจริง ต้องเชื่อมต่อผู้ให้บริการที่ได้รับอนุญาตและระบบยืนยันตัวตน",13,MUTED,false),lp(-1,-2,6,0));
         content.addView(promo,lp(-1,-2,0,18));
 
+        LinearLayout security=column(); security.setPadding(16,16,16,16); security.setBackground(shape(WHITE,20));
+        security.addView(label("🛡️  AI ผู้ช่วยและตรวจสอบภัย",16,INK,true));
+        security.addView(label("ตรวจลิงก์น่าสงสัยและถามคำถามด้านความปลอดภัยออนไลน์",13,MUTED,false),lp(-1,-2,5,10));
+        Button secureBtn=smallButton("เปิด AI & ตรวจภัย"); secureBtn.setOnClickListener(v->securityMenu()); security.addView(secureBtn,new LinearLayout.LayoutParams(-1,48));
+        content.addView(security,lp(-1,-2,0,18));
+
         LinearLayout hh=new LinearLayout(this); hh.setGravity(Gravity.CENTER_VERTICAL);
         hh.addView(label("รายการล่าสุด",18,INK,true),new LinearLayout.LayoutParams(0,-2,1));
         Button all=smallButton("ดูทั้งหมด"); all.setOnClickListener(v->showHistory()); hh.addView(all);
@@ -128,5 +134,66 @@ public class MainActivity extends Activity {
         if(transactions.isEmpty()){info("ประวัติรายการ","ยังไม่มีรายการทดลอง");return;}
         StringBuilder sb=new StringBuilder();for(String item:transactions)sb.append(item).append("\n\n");info("ประวัติรายการทดลอง",sb.toString());
     }
-    private void info(String title,String message){new AlertDialog.Builder(this).setTitle(title).setMessage(message).setPositiveButton("ตกลง",null).show();}
+
+    private void securityMenu() {
+        String[] options={"ตรวจสอบ URL / ลิงก์","ถาม AI เรื่องความปลอดภัย","ข้อควรระวัง"};
+        new AlertDialog.Builder(this).setTitle("AI ผู้ช่วยและตรวจสอบภัย").setItems(options,(d,which)->{
+            if(which==0) scanUrlDialog();
+            else if(which==1) aiQuestionDialog();
+            else info("ข้อควรระวัง","อย่ากรอกรหัสผ่าน, OTP, PIN หรือ API key ในแชต/ลิงก์ที่ไม่รู้จัก แอปนี้ไม่สามารถสแกนไวรัสทั้งเครื่องแทนระบบป้องกันของ Android ได้");
+        }).show();
+    }
+    private void scanUrlDialog() {
+        EditText urlInput=new EditText(this); urlInput.setHint("https://example.com"); urlInput.setSingleLine(true);
+        new AlertDialog.Builder(this).setTitle("ตรวจสอบลิงก์").setMessage("ลิงก์ที่ส่งไปยังบริการตรวจภัยภายนอกอาจถูกจัดเก็บหรือแชร์เพื่อการวิเคราะห์ ห้ามส่งลิงก์ส่วนตัวหรือข้อมูลลับ")
+        .setView(urlInput).setNegativeButton("ยกเลิก",null).setPositiveButton("ตรวจสอบ",(d,w)->{
+            String url=urlInput.getText().toString().trim();
+            if(!(url.startsWith("https://")||url.startsWith("http://"))){info("ลิงก์ไม่ถูกต้อง","กรุณาใส่ URL ที่ขึ้นต้นด้วย https:// หรือ http://");return;}
+            callBackend("/api/security/url", "{\"url\":\""+jsonEscape(url)+"\"}", "ผลตรวจลิงก์");
+        }).show();
+    }
+    private void aiQuestionDialog() {
+        EditText question=new EditText(this); question.setHint("เช่น ลิงก์นี้ดูน่าสงสัยอย่างไร?");
+        question.setMinLines(2);
+        new AlertDialog.Builder(this).setTitle("ถาม AI ด้านความปลอดภัย")
+        .setMessage("อย่าส่งรหัสผ่าน, OTP, ข้อมูลบัญชี หรือข้อมูลส่วนตัว")
+        .setView(question).setNegativeButton("ยกเลิก",null).setPositiveButton("ถาม AI",(d,w)->{
+            String q=question.getText().toString().trim();
+            if(q.isEmpty()){info("ยังไม่มีคำถาม","กรุณาพิมพ์คำถามก่อน");return;}
+            callBackend("/api/assistant", "{\"question\":\""+jsonEscape(q)+"\"}", "คำตอบจาก AI");
+        }).show();
+    }
+    private String jsonEscape(String s) {
+        return s.replace("\\","\\\\").replace("\"","\\\"").replace("\n","\\n").replace("\r","\\r");
+    }
+    private void callBackend(String path,String body,String title) {
+        if("https://YOUR-BACKEND-DOMAIN".equals(API_BASE_URL)) {
+            info("ยังไม่ได้เชื่อม API จริง","ต้องนำ backend ในโฟลเดอร์ backend ไปติดตั้งบนเซิร์ฟเวอร์ HTTPS แล้วตั้งค่า API_BASE_URL ในแอปก่อนใช้งาน");
+            return;
+        }
+        Toast.makeText(this,"กำลังเชื่อมต่อบริการ...",Toast.LENGTH_SHORT).show();
+        new Thread(()->{
+            HttpURLConnection conn=null;
+            try {
+                java.net.URL endpoint=new java.net.URL(API_BASE_URL+path);
+                conn=(HttpURLConnection)endpoint.openConnection();
+                conn.setRequestMethod("POST"); conn.setConnectTimeout(12000); conn.setReadTimeout(20000);
+                conn.setDoOutput(true); conn.setRequestProperty("Content-Type","application/json; charset=UTF-8");
+                byte[] bytes=body.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                conn.getOutputStream().write(bytes);
+                int status=conn.getResponseCode();
+                java.io.InputStream stream=status>=200&&status<300?conn.getInputStream():conn.getErrorStream();
+                java.io.ByteArrayOutputStream out=new java.io.ByteArrayOutputStream();
+                byte[] buf=new byte[2048]; int n; while(stream!=null&&(n=stream.read(buf))!=-1)out.write(buf,0,n);
+                String raw=new String(out.toByteArray(),java.nio.charset.StandardCharsets.UTF_8);
+                org.json.JSONObject json=new org.json.JSONObject(raw);
+                String result=json.optString("result",json.optString("answer",json.optString("message",raw)));
+                final String message=status>=200&&status<300?result:"บริการตอบกลับผิดพลาด ("+status+"): "+result;
+                runOnUiThread(()->info(title,message));
+            } catch(Exception e) {
+                runOnUiThread(()->info("เชื่อมต่อไม่ได้","ตรวจสอบว่า backend เปิดใช้งานแล้ว ตั้งค่า API_BASE_URL ถูกต้อง และเซิร์ฟเวอร์เข้าถึงได้"));
+            } finally { if(conn!=null)conn.disconnect(); }
+        }).start();
+    }
+\n    private void info(String title,String message){new AlertDialog.Builder(this).setTitle(title).setMessage(message).setPositiveButton("ตกลง",null).show();}
 }
