@@ -1,79 +1,132 @@
 package com.zyro.game;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.os.Bundle;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
-import android.content.SharedPreferences;
+import android.text.InputType;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import java.util.Random;
+import android.widget.Toast;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
 
 public class MainActivity extends Activity {
-    int level, xp, coins, hp, maxHp, potions, wins, enemyHp, enemyMax, questKills;
-    String enemy;
-    boolean questClaimed;
-    Random random = new Random();
-    SharedPreferences save;
-    LinearLayout root, content;
-    TextView stats, log, enemyView, questView;
-    final int BG = Color.rgb(10, 13, 25), PANEL = Color.rgb(24, 30, 52), CYAN = Color.rgb(71, 224, 255), WHITE = Color.rgb(240, 244, 255), MUTED = Color.rgb(164, 177, 204);
+    private final int BLUE = Color.rgb(28,105,235), BLUE_DARK = Color.rgb(18,72,178);
+    private final int BG = Color.rgb(244,248,255), INK = Color.rgb(24,42,72), MUTED = Color.rgb(111,130,158), WHITE = Color.WHITE;
+    private LinearLayout content;
+    private TextView balanceText, historyText;
+    private boolean balanceVisible = true;
+    private final ArrayList<String> transactions = new ArrayList<>();
 
-    @Override public void onCreate(Bundle b) {
-        super.onCreate(b);
-        save = getSharedPreferences("zyro_save", MODE_PRIVATE);
-        level=save.getInt("level",1); xp=save.getInt("xp",0); coins=save.getInt("coins",20);
-        maxHp=save.getInt("maxHp",100); hp=save.getInt("hp",maxHp); potions=save.getInt("potions",3);
-        wins=save.getInt("wins",0); questKills=save.getInt("questKills",0); questClaimed=save.getBoolean("questClaimed",false);
-        if(hp<=0) hp=maxHp;
-        spawnEnemy(); buildUi(); render();
+    @Override public void onCreate(Bundle state) {
+        super.onCreate(state);
+        getWindow().setStatusBarColor(BG);
+        getWindow().setNavigationBarColor(BG);
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+        buildHome();
     }
-    GradientDrawable shape(int color, int radius) {
-        GradientDrawable d=new GradientDrawable(); d.setColor(color); d.setCornerRadius(radius); d.setStroke(1, Color.rgb(55,68,99)); return d;
+    private GradientDrawable shape(int color, int radius) {
+        GradientDrawable d = new GradientDrawable(); d.setColor(color); d.setCornerRadius(radius); return d;
     }
-    TextView text(String s,int size,int color,boolean bold) {
-        TextView t=new TextView(this); t.setText(s); t.setTextSize(size); t.setTextColor(color);
-        t.setTypeface(Typeface.DEFAULT, bold?Typeface.BOLD:Typeface.NORMAL); t.setGravity(Gravity.CENTER_VERTICAL);
-        t.setPadding(14,8,14,8); return t;
+    private TextView label(String value, int size, int color, boolean bold) {
+        TextView t = new TextView(this); t.setText(value); t.setTextSize(size); t.setTextColor(color);
+        t.setTypeface(Typeface.DEFAULT, bold ? Typeface.BOLD : Typeface.NORMAL); t.setGravity(Gravity.CENTER_VERTICAL); return t;
     }
-    void buildUi() {
-        root=new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setBackgroundColor(BG);
+    private LinearLayout column() { LinearLayout l = new LinearLayout(this); l.setOrientation(LinearLayout.VERTICAL); return l; }
+    private LinearLayout.LayoutParams lp(int w, int h, int top, int bottom) {
+        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(w,h); p.setMargins(0,top,0,bottom); return p;
+    }
+    private TextView centered(String s,int size,int color,boolean bold) {
+        TextView t=label(s,size,color,bold); t.setGravity(Gravity.CENTER); return t;
+    }
+    private void buildHome() {
+        LinearLayout root=column(); root.setBackgroundColor(BG);
         ScrollView scroll=new ScrollView(this); scroll.setFillViewport(true);
-        content=new LinearLayout(this); content.setOrientation(LinearLayout.VERTICAL); content.setPadding(16,12,16,24);
-        scroll.addView(content); root.addView(scroll,new LinearLayout.LayoutParams(-1,-1)); setContentView(root);
-        TextView title=text("✦ ZYRO GAME",27,CYAN,true); title.setGravity(Gravity.CENTER); content.addView(title);
-        TextView sub=text("FANTASY RPG  •  ADVENTURE BEGINS",11,MUTED,true); sub.setGravity(Gravity.CENTER); content.addView(sub);
-        stats=text("",15,WHITE,true); stats.setBackground(shape(PANEL,18)); content.addView(stats,margin(0,14,0,8));
-        TextView heading=text("⚔  BATTLE ARENA",19,WHITE,true); content.addView(heading);
-        enemyView=text("",17,WHITE,true); enemyView.setGravity(Gravity.CENTER); enemyView.setMinHeight(100); enemyView.setBackground(shape(Color.rgb(36,27,54),18)); content.addView(enemyView,margin(0,8,0,8));
-        Button attack=button("⚔  โจมตี"); attack.setOnClickListener(v->attack());
-        Button special=button("✦  สกิลพิเศษ  (ใช้ 10 XP)"); special.setOnClickListener(v->special());
-        Button potion=button("♥  ใช้ยาเพิ่ม HP"); potion.setOnClickListener(v->heal());
-        content.addView(attack,margin(0,4,0,4)); content.addView(special,margin(0,4,0,4)); content.addView(potion,margin(0,4,0,12));
-        content.addView(text("📜 ภารกิจนักผจญภัย",19,CYAN,true));
-        questView=text("",14,WHITE,false); questView.setBackground(shape(PANEL,16)); content.addView(questView,margin(0,6,0,4));
-        Button quest=button("🎁 รับรางวัลภารกิจ"); quest.setOnClickListener(v->claimQuest()); content.addView(quest,margin(0,4,0,10));
-        content.addView(text("📖 บันทึกการผจญภัย",18,CYAN,true));
-        log=text("ยินดีต้อนรับ นักผจญภัย! แตะโจมตีเพื่อเริ่มต่อสู้",14,WHITE,false); log.setGravity(Gravity.TOP); log.setMinHeight(76); log.setBackground(shape(PANEL,16)); content.addView(log,margin(0,6,0,10));
-        Button rest=button("🏕 พักฟื้นฟรี"); rest.setOnClickListener(v->{hp=maxHp; setLog("พักฟื้นเรียบร้อย HP กลับมาเต็มแล้ว"); render(); save();}); content.addView(rest,margin(0,3,0,4));
-        Button reset=button("↻ เริ่มเกมใหม่"); reset.setOnClickListener(v->resetGame()); content.addView(reset,margin(0,3,0,4));
-        TextView foot=text("ZYRO • Your journey, your legend",11,MUTED,false); foot.setGravity(Gravity.CENTER); content.addView(foot);
+        content=column(); content.setPadding(18,12,18,24); scroll.addView(content);
+        root.addView(scroll,new LinearLayout.LayoutParams(-1,-1)); setContentView(root);
+
+        LinearLayout header=new LinearLayout(this); header.setGravity(Gravity.CENTER_VERTICAL);
+        TextView logo=centered("Z",25,WHITE,true); logo.setBackground(shape(BLUE,16));
+        header.addView(logo,new LinearLayout.LayoutParams(48,48));
+        LinearLayout brand=column(); brand.addView(label("Zyro Wallet",21,INK,true)); brand.addView(label("กระเป๋าเงินดิจิทัล",12,MUTED,false));
+        LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(0,-2,1); bp.setMargins(12,0,0,0); header.addView(brand,bp);
+        Button profile=smallButton("โปรไฟล์"); profile.setOnClickListener(v->info("โปรไฟล์","เวอร์ชันทดสอบนี้ยังไม่มีบัญชีผู้ใช้จริงหรือการยืนยันตัวตน")); header.addView(profile);
+        content.addView(header,lp(-1,-2,6,18));
+
+        LinearLayout wallet=column(); wallet.setPadding(20,20,20,20); wallet.setBackground(shape(BLUE,24));
+        LinearLayout row=new LinearLayout(this); row.setGravity(Gravity.CENTER_VERTICAL);
+        row.addView(label("ยอดเงินในกระเป๋า",14,WHITE,false),new LinearLayout.LayoutParams(0,-2,1));
+        Button eye=new Button(this); eye.setText("◉"); eye.setTextColor(WHITE); eye.setTextSize(17); eye.setAllCaps(false); eye.setBackground(shape(BLUE_DARK,14));
+        eye.setOnClickListener(v->{balanceVisible=!balanceVisible;updateBalance();}); row.addView(eye,new LinearLayout.LayoutParams(46,42)); wallet.addView(row);
+        balanceText=label("",30,WHITE,true); wallet.addView(balanceText,lp(-1,-2,8,2));
+        wallet.addView(label("THB  •  กระเป๋าทดลอง",12,Color.rgb(218,233,255),false));
+        wallet.addView(label("ⓘ  ยังไม่เชื่อมต่อระบบเงินจริง",12,Color.rgb(255,244,196),true),lp(-1,-2,14,0));
+        content.addView(wallet,lp(-1,-2,0,20)); updateBalance();
+
+        content.addView(label("บริการของฉัน",18,INK,true),lp(-1,-2,0,10));
+        LinearLayout services=new LinearLayout(this); services.setGravity(Gravity.CENTER);
+        services.addView(service("▦","สแกนจ่าย",()->info("สแกน QR","การสแกนและชำระเงินจริงยังไม่พร้อมใช้งาน กรุณารอการเชื่อมต่อผู้ให้บริการชำระเงิน")));
+        services.addView(service("↗","โอนเงิน",()->transferDialog()));
+        services.addView(service("＋","เติมเงิน",()->info("เติมเงิน","ยังไม่สามารถเติมเงินเข้ากระเป๋าได้ เพราะยังไม่มีผู้ให้บริการเงินจริง")));
+        services.addView(service("⇩","รับเงิน",()->info("รับเงิน","QR รับเงินจริงจะเปิดใช้งานหลังตั้งค่าระบบบัญชีและผู้ให้บริการ")));
+        content.addView(services,lp(-1,108,0,20));
+
+        LinearLayout promo=column(); promo.setPadding(16,16,16,16); promo.setBackground(shape(WHITE,20));
+        promo.addView(label("บัญชีของคุณปลอดภัย",16,INK,true));
+        promo.addView(label("ก่อนใช้งานเงินจริง ต้องเชื่อมต่อผู้ให้บริการที่ได้รับอนุญาตและระบบยืนยันตัวตน",13,MUTED,false),lp(-1,-2,6,0));
+        content.addView(promo,lp(-1,-2,0,18));
+
+        LinearLayout hh=new LinearLayout(this); hh.setGravity(Gravity.CENTER_VERTICAL);
+        hh.addView(label("รายการล่าสุด",18,INK,true),new LinearLayout.LayoutParams(0,-2,1));
+        Button all=smallButton("ดูทั้งหมด"); all.setOnClickListener(v->showHistory()); hh.addView(all);
+        content.addView(hh,lp(-1,-2,0,10));
+        historyText=label("ยังไม่มีรายการ",14,MUTED,false); historyText.setGravity(Gravity.TOP); historyText.setPadding(16,16,16,16); historyText.setBackground(shape(WHITE,18));
+        content.addView(historyText,lp(-1,-2,0,18));
+        content.addView(centered("ZYRO WALLET  •  เวอร์ชันทดสอบ",11,MUTED,false),lp(-1,-2,8,0));
     }
-    LinearLayout.LayoutParams margin(int l,int t,int r,int b){ LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2); p.setMargins(l,t,r,b); return p; }
-    Button button(String label){ Button b=new Button(this); b.setText(label); b.setTextColor(WHITE); b.setTextSize(15); b.setAllCaps(false); b.setBackground(shape(Color.rgb(30,43,70),16)); return b; }
-    void spawnEnemy(){ String[] names={"Slime แห่งเงา","หมาป่าจันทรา","ก็อบลินนักรบ","อัศวินรัตติกาล","มังกรน้อย"}; enemy=names[random.nextInt(names.length)]; enemyMax=35+level*15+random.nextInt(15); enemyHp=enemyMax; }
-    void attack(){ if(enemyHp<=0){spawnEnemy();} int dmg=8+level*4+random.nextInt(10); enemyHp=Math.max(0,enemyHp-dmg); String msg="คุณโจมตี "+enemy+" สร้างความเสียหาย "+dmg+"!"; if(enemyHp==0){victory();}else{int hit=3+random.nextInt(7)+level; hp=Math.max(1,hp-hit); msg+="\n"+enemy+" โต้กลับ -"+hit+" HP";} setLog(msg); render(); save(); }
-    void special(){ if(xp<10){setLog("EXP ยังไม่พอ! ต้องมีอย่างน้อย 10 XP");return;} xp-=10; int dmg=22+level*7; enemyHp=Math.max(0,enemyHp-dmg); String msg="✦ สกิล Zyro Burst! สร้างความเสียหาย "+dmg+"!"; if(enemyHp==0) victory(); else {int hit=5+level;hp=Math.max(1,hp-hit);msg+="\nศัตรูสวนกลับ -"+hit+" HP";} setLog(msg);render();save(); }
-    void heal(){ if(potions<=0){setLog("ยาหมดแล้ว! ชนะศัตรูเพื่อรับเหรียญไปซื้อยาไม่ได้ในเวอร์ชันนี้");return;} if(hp==maxHp){setLog("HP เต็มอยู่แล้ว เก็บยาไว้ก่อนนะ");return;} int before=hp;hp=Math.min(maxHp,hp+40);potions--;setLog("ใช้ยา ฟื้นฟู "+(hp-before)+" HP");render();save(); }
-    void victory(){ wins++;questKills++;coins+=10+level*3;xp+=15+level*5;setLog("🏆 ชนะ "+enemy+"! ได้เหรียญและ EXP แล้ว"); while(xp>=level*30){xp-=level*30;level++;maxHp+=20;hp=maxHp;coins+=15;} spawnEnemy(); }
-    void claimQuest(){ if(questClaimed){setLog("รับรางวัลภารกิจนี้ไปแล้ว ลองเล่นต่อเพื่อสะสมชัยชนะ!");return;} if(questKills<3){setLog("ภารกิจยังไม่สำเร็จ: ต้องชนะศัตรู 3 ตัว ("+questKills+"/3)");return;} questClaimed=true;coins+=50;potions+=2;setLog("🎉 สำเร็จภารกิจ! ได้ 50 เหรียญ และยา 2 ขวด");render();save(); }
-    void resetGame(){level=1;xp=0;coins=20;maxHp=100;hp=100;potions=3;wins=0;questKills=0;questClaimed=false;spawnEnemy();setLog("เริ่มการผจญภัยใหม่แล้ว! ขอให้โชคดี");render();save();}
-    void setLog(String s){if(log!=null)log.setText(s);}
-    void render(){if(stats==null)return;stats.setText("  ⭐ เลเวล "+level+"     ✨ EXP "+xp+"/"+(level*30)+"\n  ♥ HP "+hp+"/"+maxHp+"     🪙 "+coins+" เหรียญ\n  🧪 ยาฟื้นฟู "+potions+"     🏆 ชนะ "+wins+" ครั้ง");enemyView.setText("👾  "+enemy+"\n♥ HP: "+enemyHp+"/"+enemyMax+"\n\nแตะโจมตีเพื่อสู้!");questView.setText("  ภารกิจ: ชนะมอนสเตอร์ 3 ตัว\n  ความคืบหน้า: "+Math.min(questKills,3)+"/3"+(questClaimed?"\n  สถานะ: รับรางวัลแล้ว":"\n  รางวัล: 50 เหรียญ + ยา 2 ขวด"));}
-    void save(){save.edit().putInt("level",level).putInt("xp",xp).putInt("coins",coins).putInt("maxHp",maxHp).putInt("hp",hp).putInt("potions",potions).putInt("wins",wins).putInt("questKills",questKills).putBoolean("questClaimed",questClaimed).apply();}
+    private View service(String icon,String title,Runnable action) {
+        LinearLayout item=column(); item.setGravity(Gravity.CENTER);
+        TextView glyph=centered(icon,25,BLUE,true); glyph.setBackground(shape(Color.rgb(225,237,255),18)); item.addView(glyph,new LinearLayout.LayoutParams(58,58));
+        item.addView(centered(title,12,INK,true),lp(-1,-2,7,0)); item.setOnClickListener(v->action.run()); return item;
+    }
+    private Button smallButton(String title) {
+        Button b=new Button(this); b.setText(title); b.setTextSize(12); b.setTextColor(BLUE); b.setAllCaps(false); b.setPadding(10,0,10,0); b.setBackground(shape(Color.rgb(229,239,255),14)); return b;
+    }
+    private void updateBalance() { if(balanceText!=null) balanceText.setText(balanceVisible?"฿ 0.00":"฿ ••••••"); }
+    private void transferDialog() {
+        LinearLayout form=column(); form.setPadding(4,8,4,0);
+        EditText recipient=new EditText(this); recipient.setHint("รหัสผู้รับทดลอง (เช่น ZYRO123)"); recipient.setSingleLine(true); form.addView(recipient);
+        EditText amount=new EditText(this); amount.setHint("จำนวนเงิน (บาท)"); amount.setInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL); form.addView(amount);
+        new AlertDialog.Builder(this).setTitle("ทดลองโอนเงิน")
+        .setMessage("โหมดทดลองเท่านั้น ไม่ส่งเงินจริงและไม่ติดต่อธนาคาร").setView(form).setNegativeButton("ยกเลิก",null)
+        .setPositiveButton("บันทึกรายการทดลอง",(dialog,which)->{
+            String to=recipient.getText().toString().trim(), amt=amount.getText().toString().trim();
+            if(to.isEmpty()||amt.isEmpty()){Toast.makeText(this,"กรุณากรอกผู้รับและจำนวนเงิน",Toast.LENGTH_LONG).show();return;}
+            try {
+                double value=Double.parseDouble(amt); if(value<=0||value>1000000) throw new NumberFormatException();
+                String time=new SimpleDateFormat("dd/MM HH:mm",Locale.getDefault()).format(new Date());
+                transactions.add(0,"↗  โอนทดลองให้ "+to+"\n     ฿ "+String.format(Locale.getDefault(),"%.2f",value)+"  •  "+time);
+                refreshHistory(); Toast.makeText(this,"บันทึกเป็นรายการทดลองแล้ว — ไม่มีการโอนเงินจริง",Toast.LENGTH_LONG).show();
+            } catch(NumberFormatException e){Toast.makeText(this,"จำนวนเงินไม่ถูกต้อง",Toast.LENGTH_LONG).show();}
+        }).show();
+    }
+    private void refreshHistory() {
+        if(historyText==null)return; if(transactions.isEmpty()){historyText.setText("ยังไม่มีรายการ");return;}
+        StringBuilder sb=new StringBuilder(); for(int i=0;i<Math.min(5,transactions.size());i++){if(i>0)sb.append("\n\n");sb.append(transactions.get(i));} historyText.setText(sb.toString());
+    }
+    private void showHistory() {
+        if(transactions.isEmpty()){info("ประวัติรายการ","ยังไม่มีรายการทดลอง");return;}
+        StringBuilder sb=new StringBuilder();for(String item:transactions)sb.append(item).append("\n\n");info("ประวัติรายการทดลอง",sb.toString());
+    }
+    private void info(String title,String message){new AlertDialog.Builder(this).setTitle(title).setMessage(message).setPositiveButton("ตกลง",null).show();}
 }
