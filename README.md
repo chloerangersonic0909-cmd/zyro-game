@@ -1,23 +1,28 @@
 # Zyro Wallet APK 💙
 
-Zyro Wallet is an Android wallet UI prototype with a blue-and-white design.
+Android wallet interface prototype with a blue-and-white design, plus an AI/security API integration starter.
 
-## Current prototype features
-- Wallet home screen with a clearly labelled test balance
-- Service shortcuts for scan/pay, transfer, top up, and receive
-- Local in-memory demo transfer history
-- Android APK built by GitHub Actions
+## Included in this repository
+- Wallet home screen and clearly labelled demo balance
+- Demo transfer history only; no funds move
+- AI cybersecurity Q&A screen wired to a backend endpoint
+- URL reputation lookup screen wired to a backend endpoint
+- Backend starter under `backend/`
+- GitHub Actions builds a debug APK
 
-## Important: real money is not enabled
-This build is a UI prototype only. It does not connect to a bank, payment gateway, PromptPay, or any licensed payment provider. The balance is not real money and demo transfers do not move funds.
+## Important: not a live financial product
+Real money transfers, deposits, withdrawals, account balances, and payment QR settlement are **not enabled**. No licensed payment provider has been selected or connected. A real deployment needs a provider-approved merchant account, provider-specific server-side integration, verified webhooks, authentication, a ledger, reconciliation, fraud monitoring, and security/privacy review. Never trust payment status from the Android client and never place secret API keys in the APK or GitHub.
 
-To enable real payments, the project needs a selected licensed provider, an approved merchant/account agreement, a secure server-side integration, verified payment webhooks, authentication, transaction records, and provider sandbox testing. Do not place provider secret keys in the Android app or commit secrets to Git.
+## AI and URL reputation
+The Android app currently uses a placeholder backend URL. Deploy `backend/server.mjs` on a server with HTTPS, set private server environment variables, then set `API_BASE_URL` in `MainActivity.java` to that HTTPS origin and rebuild. Until that is done, the AI and URL scan buttons will explicitly report that they are not connected.
+
+The VirusTotal integration submits URLs to VirusTotal; submitted indicators may be shared with its security dataset. Do not submit private or sensitive links. Check the provider's terms and access level before commercial use. URL reputation does not scan the Android device and does not guarantee safety. Keep Google Play Protect enabled.
 
 ## Build and download
 1. Open the Actions tab.
 2. Select **Build Zyro Wallet APK**.
-3. Open the successful run.
+3. Open a successful run.
 4. Under Artifacts, download **Zyro-Wallet-APK** and extract the ZIP.
-5. Install `app-debug.apk` on your Android phone for testing.
+5. Install `app-debug.apk` for testing.
 
-This is a debug APK for testing, not a production or Play Store release.
+This is a debug build, not a production financial app or a Play Store release.
