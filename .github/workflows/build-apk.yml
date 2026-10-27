@@ -25,11 +25,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: npm
       - name: Install JavaScript dependencies
         run: npm install
-      - name: Validate Expo project
-        run: npx expo-doctor
+      - name: Align Expo package versions
+        run: npx expo install --fix
       - name: Generate Android project
         env:
           EXPO_PUBLIC_API_BASE_URL: ${{ vars.EXPO_PUBLIC_API_BASE_URL }}
