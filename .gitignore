@@ -33,3 +33,10 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+# JavaScript / React Native
+node_modules/
+.expo/
+android/
+ios/
+web-build/
