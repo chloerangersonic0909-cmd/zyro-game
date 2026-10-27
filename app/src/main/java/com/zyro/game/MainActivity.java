@@ -14,14 +14,16 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import android.widget.Toast;\nimport java.net.HttpURLConnection;
+import android.widget.Toast;
+import java.net.HttpURLConnection;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
 public class MainActivity extends Activity {
-    private final int BLUE = Color.rgb(28,105,235), BLUE_DARK = Color.rgb(18,72,178);\n    private static final String API_BASE_URL = "https://YOUR-BACKEND-DOMAIN";
+    private final int BLUE = Color.rgb(28,105,235), BLUE_DARK = Color.rgb(18,72,178);
+    private static final String API_BASE_URL = "https://YOUR-BACKEND-DOMAIN";
     private final int BG = Color.rgb(244,248,255), INK = Color.rgb(24,42,72), MUTED = Color.rgb(111,130,158), WHITE = Color.WHITE;
     private LinearLayout content;
     private TextView balanceText, historyText;
