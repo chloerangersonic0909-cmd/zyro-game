@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Zyro AI</title>
+<style>
+:root{color-scheme:dark;--bg:#070b16;--panel:#101a2d;--line:#243b5c;--cyan:#39d9ff;--blue:#4388ff;--txt:#eef7ff;--muted:#9db2cc}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#142d55 0,#070b16 42%);color:var(--txt);font:15px system-ui,sans-serif;min-height:100vh}
+header{padding:22px 18px 12px;position:sticky;top:0;background:#080e1beF;backdrop-filter:blur(12px);border-bottom:1px solid var(--line);z-index:2}
+.brand{font-size:25px;font-weight:800;letter-spacing:.3px}.brand span{color:var(--cyan)}.sub{font-size:12px;color:var(--muted);margin-top:3px}
+main{max-width:760px;margin:auto;padding:14px 12px 150px}.settings,.bubble{background:#101a2ddd;border:1px solid var(--line);border-radius:16px;padding:13px;margin-bottom:12px}
+label{display:block;color:var(--muted);font-size:12px;margin:7px 0}input,select,textarea{width:100%;background:#070e1b;color:var(--txt);border:1px solid #2b4568;border-radius:10px;padding:11px;font:inherit;outline:none}textarea{resize:vertical;min-height:45px;max-height:160px}
+button{background:linear-gradient(120deg,var(--blue),#13b9db);color:white;border:0;border-radius:11px;padding:11px 14px;font-weight:700;font-size:14px}
+.row{display:flex;gap:8px;align-items:center}.row>*{min-width:0;flex:1}.small{font-size:11px;color:var(--muted);line-height:1.5}.chat{display:flex;flex-direction:column;gap:10px}.bubble{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.55}.user{border-color:#2769b5;background:#102746}.who{font-size:11px;color:var(--cyan);font-weight:700;margin-bottom:5px}.empty{text-align:center;color:var(--muted);padding:40px 10px}.composer{position:fixed;bottom:0;left:0;right:0;padding:10px;background:#080e1bf2;border-top:1px solid var(--line);backdrop-filter:blur(14px)}.compose-inner{max-width:760px;margin:auto;display:flex;gap:8px;align-items:end}.compose-inner textarea{flex:1;min-height:46px}.status{font-size:12px;color:var(--muted);padding:5px 2px}.danger{color:#ffb6b6}
+</style></head>
+<body>
+<header><div class="brand">Zyro <span>AI</span> ✦</div><div class="sub">ผู้ช่วย AI สำหรับแชต เขียนโค้ด และช่วยคิด</div></header>
+<main>
+<section class="settings">
+<div class="row"><div><label for="provider">ผู้ให้บริการ API</label><select id="provider"><option value="openrouter">OpenRouter</option><option value="openai">OpenAI</option></select></div><div><label for="model">โมเดล</label><input id="model" value="openai/gpt-4o-mini" autocomplete="off"></div></div>
+<label for="key">API Key ของคุณ</label><input id="key" type="password" placeholder="ใส่ API key ที่คุณสร้างเอง" autocomplete="off">
+<div class="row" style="margin-top:9px"><button id="save">บันทึกบนเครื่อง</button><button id="clear" style="background:#24344e">ล้างแชต</button></div>
+<p class="small">คีย์จะถูกเก็บไว้ใน local storage ของแอปบนอุปกรณ์นี้และส่งตรงไปยังผู้ให้บริการที่เลือก อย่าใช้เครื่องร่วมกับผู้อื่นหรือใส่คีย์ที่ไม่ต้องการเปิดเผย ค่าใช้บริการ API อาจมีค่าใช้จ่ายตามผู้ให้บริการ</p>
+</section>
+<div id="chat" class="chat"><div class="empty">💠 เริ่มสนทนากับ Zyro AI ได้เลย<br>พิมพ์คำถามหรือขอให้ช่วยเขียนโค้ดด้านล่าง</div></div>
+</main>
+<div class="composer"><div class="compose-inner"><textarea id="prompt" placeholder="พิมพ์ข้อความ..." rows="1"></textarea><button id="send">ส่ง ➤</button></div><div id="status" class="status">พร้อมทำงาน</div></div>
+<script>
+const $=id=>document.getElementById(id);let messages=[];
+const saved=localStorage.getItem('zyro-key');if(saved)$('key').value=saved;
+$('model').value=localStorage.getItem('zyro-model')||'openai/gpt-4o-mini';
+$('provider').value=localStorage.getItem('zyro-provider')||'openrouter';
+function addBubble(role,text){const empty=document.querySelector('.empty');if(empty)empty.remove();const el=document.createElement('div');el.className='bubble '+(role==='user'?'user':'');const who=document.createElement('div');who.className='who';who.textContent=role==='user'?'คุณ':'ZYRO AI';const body=document.createElement('div');body.textContent=text;el.append(who,body);$('chat').append(el);window.scrollTo(0,document.body.scrollHeight);return body}
+$('save').onclick=()=>{localStorage.setItem('zyro-key',$('key').value.trim());localStorage.setItem('zyro-model',$('model').value.trim());localStorage.setItem('zyro-provider',$('provider').value);$('status').textContent='บันทึกการตั้งค่าไว้ในเครื่องแล้ว'};
+$('clear').onclick=()=>{messages=[];$('chat').innerHTML='<div class="empty">💠 เริ่มสนทนากับ Zyro AI ได้เลย</div>';};
+async function send(){const text=$('prompt').value.trim();if(!text)return;const key=$('key').value.trim();if(!key){$('status').textContent='กรุณาใส่ API Key ก่อน';return}const provider=$('provider').value;const model=$('model').value.trim();if(!model){$('status').textContent='กรุณาระบุชื่อโมเดล';return}
+$('prompt').value='';addBubble('user',text);messages.push({role:'user',content:text});$('send').disabled=true;$('status').textContent='กำลังคิด...';const answer=addBubble('assistant','');
+try{const url=provider==='openai'?'https://api.openai.com/v1/chat/completions':'https://openrouter.ai/api/v1/chat/completions';const headers={'Content-Type':'application/json','Authorization':'Bearer '+key};if(provider==='openrouter')headers['HTTP-Referer']='https://zyro-ai.local';const response=await fetch(url,{method:'POST',headers,body:JSON.stringify({model,messages:[{role:'system',content:'You are Zyro AI, a helpful assistant. Answer in the user’s language. Help with coding, learning, writing, and brainstorming while following applicable safety rules.'},...messages]})});const data=await response.json();if(!response.ok)throw new Error(data.error?.message||('HTTP '+response.status));const content=data.choices?.[0]?.message?.content||'(ไม่มีข้อความตอบกลับ)';answer.textContent=content;messages.push({role:'assistant',content});$('status').textContent='ตอบกลับแล้ว';}catch(e){answer.textContent='เชื่อมต่อไม่สำเร็จ: '+e.message;messages.pop();$('status').textContent='ตรวจสอบ API Key, โมเดล และอินเทอร์เน็ต';}finally{$('send').disabled=false;$('prompt').focus()}}
+$('send').onclick=send;$('prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});
+</script></body></html>
